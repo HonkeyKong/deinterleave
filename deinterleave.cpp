@@ -79,23 +79,17 @@ int main(int argc, char *argv[]) {
 
     while (offset < fileSize) {
         if(doubleByte) {
-            cout << "Reading short..." << endl;
             infile.read(curShort, sizeof(unsigned short));
             if(!byteFlag) {
-                // out1.write(curShort, sizeof(unsigned short));
                 out1 << curShort;
             } else {
-                // out2.write(curShort, sizeof(unsigned short));
                 out2 << curShort;
             } offset += sizeof(unsigned short);
         } else {
-            cout << "Reading byte..." << endl;
             infile.read(curByte, sizeof(char));
             if(!byteFlag) {
-                // out1.write(curByte, sizeof(char));
                 out1 << curByte;
             } else {
-                // out2.write(curByte, sizeof(char));
                 out2 << curByte;
             } offset += sizeof(char);
         } 
