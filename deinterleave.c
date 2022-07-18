@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
         we double the bit width of the interleaving. This is necessary for some
         ROM files that are interleaved every 16 bits rather than every 8. I'm
         too lazy to write a VA parser here, and this works. Fix it if you want. */
-    if(argc = 3) {
+    if(argc == 3) {
         doubleByte = true;
     }
 
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
         }
         byteFlag ^= 1;  // XOR byteFlag with 1 to flip it to 1/0.
     }
-    
+
     // Now that we're done, it's time to clean up.
     // Close all 3 files we opened.
     fclose(infile);
