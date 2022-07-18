@@ -30,10 +30,6 @@ int main(int argc, char *argv[]) {
         doubleByte = true;
     }
 
-    int i = 0;
-    cout << "Args: " << argc << endl;
-    for(i = 0; i < argc; i++) cout << argv[i] << endl;
-
     // Allocate RAM for our output file names
     char *outName1 = new char[strlen(argv[1])+5];   // Length + "-even"
     char *outName2 = new char[strlen(argv[1])+4];   // Length + "-odd"
@@ -68,7 +64,7 @@ int main(int argc, char *argv[]) {
     infile.seekg(0, infile.beg);
     
     // Test our output names and print the size in kilobytes.
-    cout << "Writing " << ((fileSize / 2) / 1024) << "KB to " << outName1 << "and " << outName2 << "... ";
+    cout << "Writing " << ((fileSize / 2) / 1024) << "KB to " << outName1 << " and " << outName2 << "... ";
 
     /*  The basic flow goes something like this:
         Read the data.
