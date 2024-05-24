@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "*.asm": "asm6502",
+        "*.oph": "asm6502",
+        "*.s": "asm6502",
+        "array": "cpp",
+        "*.tcc": "cpp",
+        "fstream": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "streambuf": "cpp",
+        "typeinfo": "cpp",
+        "stdint.h": "c"
+    }
+}
