@@ -10,10 +10,21 @@ enum Mode { DEINTERLEAVE, INTERLEAVE, BYTESWAP };
 
 void printUsage(const char* programName) {
     std::cerr
+        << "interleaver\n"
+        << "Chunked binary interleave, deinterleave, and 16-bit byte-swap utility.\n\n"
         << "Usage:\n"
         << "  " << programName << " -m deinterleave -c <chunk_size> -n <num_files> <input_file>\n"
-        << "  " << programName << " -m interleave -c <chunk_size> -n <num_files> <output_file> <input_files...>\n"
-        << "  " << programName << " -m byteswap <input_file> <output_file>" << std::endl;
+        << "  " << programName << " -m interleave   -c <chunk_size> -n <num_files> <output_file> <input_files...>\n"
+        << "  " << programName << " -m byteswap <input_file> <output_file>\n"
+        << "  " << programName << " -d -c <chunk_size> -n <num_files> <input_file>\n"
+        << "  " << programName << " -i -c <chunk_size> -n <num_files> <output_file> <input_files...>\n\n"
+        << "Options:\n"
+        << "  -d                 Deinterleave mode\n"
+        << "  -i                 Interleave mode\n"
+        << "  -m <mode>          Mode: deinterleave, interleave, or byteswap\n"
+        << "  -c <chunk_size>    Chunk size in bytes (default: 1)\n"
+        << "  -n <num_files>     Number of files (default: 2)\n"
+        << "  -h                 Show this help text\n";
 }
 
 void byteswapBuffer(uint8_t* buffer, size_t size) {
@@ -168,8 +179,16 @@ int main(int argc, char* argv[]) {
     size_t chunkSize = 1;
     size_t numFiles = 2;
 
-    while ((opt = getopt(argc, argv, "dim:c:n:")) != -1) {
+    if (argc == 1) {
+        printUsage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    while ((opt = getopt(argc, argv, "hdim:c:n:")) != -1) {
         switch (opt) {
+            case 'h':
+                printUsage(argv[0]);
+                return EXIT_SUCCESS;
             case 'd':
                 mode = DEINTERLEAVE;
                 break;
@@ -204,12 +223,14 @@ int main(int argc, char* argv[]) {
     if (mode == DEINTERLEAVE) {
         if (optind >= argc) {
             std::cerr << "Expected input file for deinterleave mode." << std::endl;
+            printUsage(argv[0]);
             exit(EXIT_FAILURE);
         }
         deinterleave(argv[optind], chunkSize, numFiles);
     } else if (mode == INTERLEAVE) {
         if ((static_cast<size_t>(argc - optind - 1)) < numFiles) {
             std::cerr << "Expected output file and input files for interleave mode." << std::endl;
+            printUsage(argv[0]);
             exit(EXIT_FAILURE);
         }
         interleave(argv[optind], &argv[optind + 1], chunkSize, numFiles);
