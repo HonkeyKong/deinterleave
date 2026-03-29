@@ -6,7 +6,23 @@
 #include <iostream>
 #include <getopt.h>
 
-enum Mode { DEINTERLEAVE, INTERLEAVE };
+enum Mode { DEINTERLEAVE, INTERLEAVE, BYTESWAP };
+
+void printUsage(const char* programName) {
+    std::cerr
+        << "Usage:\n"
+        << "  " << programName << " -m deinterleave -c <chunk_size> -n <num_files> <input_file>\n"
+        << "  " << programName << " -m interleave -c <chunk_size> -n <num_files> <output_file> <input_files...>\n"
+        << "  " << programName << " -m byteswap <input_file> <output_file>" << std::endl;
+}
+
+void byteswapBuffer(uint8_t* buffer, size_t size) {
+    for (size_t i = 0; i + 1 < size; i += 2) {
+        uint8_t temp = buffer[i];
+        buffer[i] = buffer[i + 1];
+        buffer[i + 1] = temp;
+    }
+}
 
 void deinterleave(const char* inputFileName, size_t chunkSize, size_t numFiles) {
     FILE* infile = fopen(inputFileName, "rb");
@@ -101,6 +117,51 @@ void interleave(const char* outputFileName, char* inputFiles[], size_t chunkSize
     delete[] inFiles;
 }
 
+void byteswapFile(const char* inputFileName, const char* outputFileName) {
+    FILE* infile = fopen(inputFileName, "rb");
+    if (!infile) {
+        std::cerr << "File read error: " << inputFileName << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    FILE* outfile = fopen(outputFileName, "wb");
+    if (!outfile) {
+        fclose(infile);
+        std::cerr << "File write error: " << outputFileName << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    fseek(infile, 0, SEEK_END);
+    size_t fileSize = ftell(infile);
+    rewind(infile);
+
+    if ((fileSize % 2) != 0) {
+        fclose(infile);
+        fclose(outfile);
+        std::cerr << "Byte-swap mode requires an even-sized input file." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    const size_t bufferSize = 4096;
+    uint8_t* buffer = static_cast<uint8_t*>(malloc(bufferSize));
+    if (!buffer) {
+        fclose(infile);
+        fclose(outfile);
+        std::cerr << "Memory allocation error." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    size_t bytesRead = 0;
+    while ((bytesRead = fread(buffer, 1, bufferSize, infile)) > 0) {
+        byteswapBuffer(buffer, bytesRead);
+        fwrite(buffer, 1, bytesRead, outfile);
+    }
+
+    free(buffer);
+    fclose(infile);
+    fclose(outfile);
+}
+
 int main(int argc, char* argv[]) {
     int opt;
     Mode mode = DEINTERLEAVE;
@@ -120,8 +181,11 @@ int main(int argc, char* argv[]) {
                     mode = DEINTERLEAVE;
                 } else if (strcmp(optarg, "interleave") == 0) {
                     mode = INTERLEAVE;
+                } else if (strcmp(optarg, "byteswap") == 0) {
+                    mode = BYTESWAP;
                 } else {
-                    std::cerr << "Invalid mode. Use 'deinterleave' or 'interleave'." << std::endl;
+                    std::cerr << "Invalid mode. Use 'deinterleave', 'interleave', or 'byteswap'." << std::endl;
+                    printUsage(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 break;
@@ -132,7 +196,7 @@ int main(int argc, char* argv[]) {
                 numFiles = atoi(optarg);
                 break;
             default:
-                std::cerr << "Usage: " << argv[0] << " -m <mode> -c <chunk_size> -n <num_files> <input/output files...>" << std::endl;
+                printUsage(argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
@@ -144,11 +208,18 @@ int main(int argc, char* argv[]) {
         }
         deinterleave(argv[optind], chunkSize, numFiles);
     } else if (mode == INTERLEAVE) {
-        if (optind + numFiles >= argc) {
+        if ((static_cast<size_t>(argc - optind - 1)) < numFiles) {
             std::cerr << "Expected output file and input files for interleave mode." << std::endl;
             exit(EXIT_FAILURE);
         }
         interleave(argv[optind], &argv[optind + 1], chunkSize, numFiles);
+    } else if (mode == BYTESWAP) {
+        if (optind + 1 >= argc) {
+            std::cerr << "Expected input file and output file for byteswap mode." << std::endl;
+            printUsage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+        byteswapFile(argv[optind], argv[optind + 1]);
     }
 
     return 0;
